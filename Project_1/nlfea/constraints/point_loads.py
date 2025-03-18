@@ -33,6 +33,8 @@ def apply(model, Fext: np.ndarray):
             local_dof = 1
         elif point_load[0] == "F_Z":
             local_dof = 2
+        else:
+            raise ValueError(f"type {point_load[0]} for point_loads not known")
 
         # get node where the point load shall be applied
         nodes = point_load[1]

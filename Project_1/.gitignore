@@ -1,0 +1,4 @@
+*.vtk
+.idea
+.vscode
+.DS_Store

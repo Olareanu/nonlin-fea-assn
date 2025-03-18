@@ -81,17 +81,41 @@ class Bar:
 
     # ===================================================================================
     def Fint_Ktan_nonlinearkinematics(self, element, material, u_elem):
+        
         # position vectors of nodes in current configuration
         x = element.coordinates + np.reshape(u_elem, (2, -1))
 
         # necessary identities
         I = np.identity(element.coordinates.shape[1])  # noqa: E741
 
-        # hints: the Young's modulus is stored in material.E, the cross-sectional area in self.A
+        # the Young's modulus is stored in material.E, the cross-sectional area in self.A
 
-        # internal force vector and stiffness matrix contribution
-        Fint_elem = ...  # TODO
+        # following lecture notes chapter 4:
 
-        Ktan_elem = ...  # TODO
+        # reference and deformed length of element
+        Le = np.linalg.norm(element.coordinates[1, :] - element.coordinates[0, :], 2)
+        le = np.linalg.norm(x[1, :] - x[0, :], 2)
+
+        # compute stretch and Green-Lagrange strain
+        stretch = le/Le
+        eGe = 0.5*(stretch**2-1)
+
+        # direction vector
+        ve = (x[1, :] - x[0, :])
+        ve = ve.reshape(-1, 1)
+
+        Ve = np.stack([-ve, ve])
+        Ve = Ve.reshape(-1, 1)
+
+        # M matrix
+        M = np.block([[I, -I], [-I, I]])
+
+        # compute Ktan for this element
+        Ktan_elem = material.E * self.A / Le * (1/(Le**2) * Ve @ Ve.T + eGe * M)
+
+
+        # compute Fint for this element
+        Ve = Ve.reshape(-1)
+        Fint_elem = material.E * eGe * self.A / Le * Ve
 
         return Fint_elem, Ktan_elem
