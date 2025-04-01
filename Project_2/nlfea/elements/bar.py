@@ -86,12 +86,30 @@ class Bar:
 
         # necessary identities
         I = np.identity(element.coordinates.shape[1])  # noqa: E741
+        M = np.block([[I, -I], [-I, I]])
 
-        # hints: the Young's modulus is stored in material.E, the cross-sectional area in self.A
+        # element length
+        L = np.linalg.norm(element.coordinates[1, :] - element.coordinates[0, :], 2)
+        v = x[1, :] - x[0, :]
+        l = np.linalg.norm(v, 2)  # noqa: E741
+
+        # V-matrix
+        V = np.hstack((-v, v))
+
+        # stretch ratio (corresponding to deformation gradient F)
+        λ = l / L
+
+        # Green-Lagrange strain
+        ε_G = 0.5 * (λ**2 - 1)
+
+        # 2nd Piola-Kirchhoff stress
+        S = material.E * ε_G
 
         # internal force vector and stiffness matrix contribution
-        Fint_elem = ...  # TODO
-
-        Ktan_elem = ...  # TODO
+        Fint_elem = S * self.A / L * V
+        Ktan_elem = (
+            material.E * self.A / (L**3) * np.outer(V, V)
+            + material.E * self.A / L * ε_G * M
+        )
 
         return Fint_elem, Ktan_elem

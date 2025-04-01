@@ -28,22 +28,26 @@ def apply(model, Ktan: np.ndarray, Fint: np.ndarray, u: np.ndarray):
     for spring_bc in model.spring_bcs:
         # get local DOF
         if spring_bc[0] == "k_X":
-            local_dof = ...  # TODO
+            local_dof = 0
         elif spring_bc[0] == "k_Y":
-            local_dof = ...  # TODO
+            local_dof = 1
         elif spring_bc[0] == "k_Z":
-            local_dof = ...  # TODO
+            local_dof = 2
 
         # get node where the spring BC shall be applied
-        nodes = ...  # TODO
+        nodes = spring_bc[1]
 
         # get spring stiffness
-        stiffness = ...  # TODO
+        stiffness = spring_bc[2]
 
         # loop over the nodes of the given nodeset and impose the spring
         for node in nodes:
             dof = int(node * model.dimension + local_dof)
 
-            ...  # TODO
+            # spring force acting against direction of displacement (external spring forces are added to internal force vector to avoid scaling by load factor variable λ)
+            Fint[dof] += stiffness * u[dof]
+
+            # additional system stiffness contribution due to linear spring
+            Ktan[dof, dof] += stiffness
 
     return Fint, Ktan

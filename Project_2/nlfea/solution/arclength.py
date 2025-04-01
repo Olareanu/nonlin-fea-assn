@@ -30,17 +30,31 @@ def predict(
 
     # apply Dirichlet BCs
     (Ktan, _) = dirichlet_bcs.apply(model, Ktan, np.zeros(model.num_dofs))
+    
+    #------------------------------------------------------
 
-    Δu_pred = ... # TODO
+    # Slides Step 1
+    Δu_λ = sparse_linalg.spsolve(Ktan, Fext)
+
+    # Slides Step 2
+
+    Δλ = s_bar/np.sqrt(np.linalg.norm(Δu_λ)**2 + 1)
+
+    Δu = Δu_λ * Δλ
+
+    # Slides Step 3
+    k = Fext.T @ Δu
+    k_0 = Fext.T @ (u - u_old)
+    #------------------------------------------------------
 
     # scale λ and determine current stiffness parameter
-    Δλ = ... # TODO
     if np.all(u == u_old):
         # very first increment of computations (to prevent 0/0)
         current_stiffness = 0
     else:
         # from second increment onwards
-        ... # TODO
+        current_stiffness = k/k_0 #------------------------------------------------------
+
 
     # store results of previous increment (n-1)
     u_old = u
@@ -49,10 +63,17 @@ def predict(
     # update load and displacement increments for predictor solution
     # depending on current stiffness parameter, choose correct path following direction
     if current_stiffness >= 0:
-        ... # TODO
+        #------------------------------------------------------
+        u = u_old + Δu
+        λ = λ_old + Δλ
+        #------------------------------------------------------
     else:
-        ... # TODO
+        #------------------------------------------------------
+        u = u_old - Δu
+        λ = λ_old - Δλ
+        #------------------------------------------------------
 
+    # return u,λ  is at n, and u_old is at 
     return λ, λ_old, u, u_old
 
 
@@ -74,17 +95,25 @@ def solve(
 
     # solution of the system with prior LU-decomposition of stiffness matrix for faster solving
     P, L, U = linalg.lu(Ktan.toarray(), check_finite=False)
-    ΔU_λ = ... # TODO
-    ΔU_U = ... # TODO
+    
+    #------------------------------------------------------
+    # As per slide nr 8:
+    ΔU_λ = linalg.solve_triangular(U, linalg.solve_triangular(L,P.T @ Fext, lower=True))
+    ΔU_U = -linalg.solve_triangular(U, linalg.solve_triangular(L,P.T @ R, lower=True))
+    #------------------------------------------------------
 
     # computation of path following system quantities
-    Δu = ... # TODO
-    s = ... # TODO
-    f_ = ... # TODO
-    K_λu = ... # TODO
-    K_λλ = ... # TODO
+    #------------------------------------------------------
+    
+    # Per Slide 4:
+    Δu = u - u_old
+    s = np.sqrt(np.linalg.norm(u - u_old)**2 + (λ - λ_old)**2)
+    f_ = s - s_bar
+    K_λu = (u - u_old).T / s
+    K_λλ = (λ - λ_old) / s
 
-    Δλ = ... # TODO
-    ΔU = ... # TODO
+    Δλ = -(f_ + K_λu @ ΔU_U)/(K_λλ + K_λu @ ΔU_λ)
+    ΔU = ΔU_U + ΔU_λ * Δλ
+    #------------------------------------------------------
 
     return ΔU, Δλ

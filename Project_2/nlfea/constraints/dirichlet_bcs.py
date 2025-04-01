@@ -28,22 +28,22 @@ def impose(model, u: np.ndarray, λ: float):
     for dirichlet_bc in model.dirichlet_bcs:
         # get local DOF
         if dirichlet_bc[0] == "fix_X":
-            local_dof = ... # TODO
+            local_dof = 0
 
         elif dirichlet_bc[0] == "fix_Y":
-            local_dof = ... # TODO
+            local_dof = 1
 
         elif dirichlet_bc[0] == "fix_Z":
-            local_dof = ... # TODO
+            local_dof = 2
 
         elif dirichlet_bc[0] == "u_X":
-            local_dof = ... # TODO
+            local_dof = 0
 
         elif dirichlet_bc[0] == "u_Y":
-            local_dof = ... # TODO
+            local_dof = 1
 
         elif dirichlet_bc[0] == "u_Z":
-            local_dof = ... # TODO
+            local_dof = 2
 
         else:
             raise ValueError(f"type {dirichlet_bc[0]} for Dirichlet BCs not known")
@@ -53,9 +53,9 @@ def impose(model, u: np.ndarray, λ: float):
 
         # get the value of the Dirichlet BC
         if dirichlet_bc[0] in ["fix_X", "fix_Y", "fix_Z"]:
-            value = ... # TODO
+            value = 0.0
         elif dirichlet_bc[0] in ["u_X", "u_Y", "u_Z"]:
-            value = ... # TODO
+            value = dirichlet_bc[2]
 
         # check if value is a lambda function
         if callable(value):
@@ -65,7 +65,8 @@ def impose(model, u: np.ndarray, λ: float):
 
         # loop over the nodes of the given nodeset and impose the value
         for node in nodes:
-            # TODO
+            dof = int(node * model.dimension + local_dof)
+            u[dof] = displacement
 
     return u
 
@@ -91,33 +92,35 @@ def apply(model, Ktan: np.ndarray, R: np.ndarray):
     for dirichlet_bc in model.dirichlet_bcs:
         # get the local DOF for the Dirichlet BC
         if dirichlet_bc[0] == "fix_X":
-            local_dof = ... # TODO
+            local_dof = 0
 
         elif dirichlet_bc[0] == "fix_Y":
-            local_dof = ... # TODO
+            local_dof = 1
 
         elif dirichlet_bc[0] == "fix_Z":
-            local_dof = ... # TODO
+            local_dof = 2
 
         elif dirichlet_bc[0] == "u_X":
-            local_dof = ... # TODO
+            local_dof = 0
 
         elif dirichlet_bc[0] == "u_Y":
-            local_dof = ... # TODO
+            local_dof = 1
 
         elif dirichlet_bc[0] == "u_Z":
-            local_dof = ... # TODO
+            local_dof = 2
 
         else:
             raise ValueError(f"type {dirichlet_bc[0]} for Dirichlet BCs not known")
 
         # get the nodes where Dirichlet BCs are to be applied
-        nodes = ... # TODO
+        nodes = dirichlet_bc[1]
 
         # loop over the nodes of the given nodeset and deactivate the respective DOFs
         for node in nodes:
             dof = int(node * model.dimension + local_dof)
-            
-            ... #TODO
+            R[dof] = 0
+            Ktan[dof, :] = 0
+            Ktan[:, dof] = 0
+            Ktan[dof, dof] = 1
 
     return Ktan, R

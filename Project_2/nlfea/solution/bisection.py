@@ -43,7 +43,7 @@ def iterate(
         print(
             f"\t\t\tbisection iteration: {bisection_iteration}: detK/detK_ref={detK / detK_ref}\n"
         )
-        if ...: # TODO
+        if abs(detK)/detK_ref <= solver.tolerance_detK: #------------------------------------------------------
             u = determine_critical_point_type(model, solver, Fext, u, λ)
             break
 
@@ -55,11 +55,29 @@ def iterate(
 
         # if change of sign of detK, continue iteration from previous solution
         if np.sign(detK) != np.sign(detK_old):
-            ... # TODO
+            #------------------------------------------------------
+            u_old = u_old_buffer
+            λ_old = λ_old_buffer
+            
+            u = u_buffer
+            λ = λ_buffer
+            # print("I arrived here 1")
+            #------------------------------------------------------
 
         # if no change of sign of detK, continue iteration from current solution
         else:
-            ... # TODO
+            #------------------------------------
+            u_old = u_old_buffer
+            λ_old = λ_old_buffer
+
+
+            u_buffer = u
+            λ_buffer = λ
+
+            detK_old = detK # unsure if needed
+            
+            # print("I arrived here 2")
+            #------------------------------------            
 
         # increase bisection iteration counter
         bisection_iteration += 1
