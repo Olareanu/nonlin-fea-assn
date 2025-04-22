@@ -287,7 +287,7 @@ class Quad:
             # We need [S_11, S_22, S_12] for internal force calculation
             S_hat = np.array([S[0, 0], S[1, 1], S[0, 1]])
 
-            # Construct S_tilde matrix for geometric stiffness
+            # Construct S_tilde matrix
             S_tilde = np.array(
                 [
                     [S[0, 0], S[0, 1], 0, 0],
@@ -307,8 +307,8 @@ class Quad:
             )
 
             # Compute tangent stiffness matrix:
-            K_material = B.T @ D @ B  # constitutive component
-            K_geometric = B_tilde.T @ S_tilde @ B_tilde  # initial stress component
+            K_constitutive = B.T @ D @ B  # constitutive component
+            K_initialStress = B_tilde.T @ S_tilde @ B_tilde  # initial stress component
 
             # compute Green-Lagrange strain tensor store values for later
             E = 0.5 * (C - np.eye(3, 3))
@@ -318,7 +318,7 @@ class Quad:
             Fint_elem += Fint_elem_gp * gauss_point.w * self.T * detJ
 
             # compute constitutive and initial stress component of stiffness matrix and numerically integrate
-            Ktan_elem_gp = K_material + K_geometric
+            Ktan_elem_gp = K_constitutive + K_initialStress
             Ktan_elem += Ktan_elem_gp * gauss_point.w * self.T * detJ
 
             # --------------------------------------------------------------------------------

@@ -32,10 +32,31 @@ class NeoHooke:
         #     [C_13 C_23 C_33]
         """
 
-        # compute the PK2 stress tensor
-        S = ...  # TODO
+        # --------------------------------------------------------------------------------
+        # Identity tensor
+        I = np.eye(3)
+        
+        # Determinant and inverse of C
+        J = np.sqrt(np.linalg.det(C))   # J = sqrt of det(C), as J = det(F) and C = F.T @ F
+        C_inv = np.linalg.inv(C)
+        
+        # Compute the PK2 stress tensor as per equation 6.121
+        S = self.μ * (I - C_inv) + self.λ * np.log(J) * C_inv
 
-        # compute the constitutive stiffness matrix
-        CC = ...  # TODO
 
+        # Compute the 4th order tensor I according to equation (6.124) (but without the redundant 1/2 and 2x)
+        I_tensor = np.zeros((3, 3, 3, 3))
+        for i in range(3):
+            for j in range(3):
+                for k in range(3):
+                    for l in range(3):
+                        I_tensor[i, j, k, l] = (C_inv[i, k] * C_inv[j, l] + C_inv[i, l] * C_inv[j, k])
+        
+        # Compute the dyadic product
+        C_inv_dyadic = np.einsum("ij,kl->ijkl", C_inv, C_inv)
+        
+        # Compute the constitutive stiffness tensor according to equation (6.122)
+        CC = self.λ * C_inv_dyadic + (self.μ - self.λ * np.log(J)) * I_tensor
+    
+        # --------------------------------------------------------------------------------
         return S, CC
