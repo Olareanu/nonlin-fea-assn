@@ -244,8 +244,10 @@ class Quad:
         for gp_idx, gauss_point in enumerate(self.gauss_points):
             # compute Jacobian, its determinant and its inverse (in reference configuration)
             J_T = gauss_point.dN_scalar.T @ element.coordinates
-            detJ = ...  # TODO
-            J_invT = ...  # TODO
+            # --------------------------------------------------------------------------------
+            detJ = np.linalg.det(J_T)
+            J_invT = np.linalg.inv(J_T)
+            # --------------------------------------------------------------------------------
 
             # compute B_tilde matrix used for ∇_X (·) = B_tilde * (·)
             B_tilde = (
@@ -253,22 +255,73 @@ class Quad:
                 @ gauss_point.dN_vector
             )
 
-            ...  # TODO
+            # --------------------------------------------------------------------------------
+            # Compute deformation tensor
+            F = x_elem.reshape(-1, 2).T @ (J_invT @ gauss_point.dN_scalar.T).T
+
+            # Compute B using F_matrix and B_tilde
+            F_11, F_12 = F[0, 0], F[0, 1]
+            F_21, F_22 = F[1, 0], F[1, 1]
+
+            F_matrix = np.array(
+                [[F_11, 0, F_21, 0], [0, F_12, 0, F_22], [F_12, F_11, F_22, F_21]]
+            )
+
+            B = F_matrix @ B_tilde
+
+            # Convert F to 3D
+            F = np.array([[F[0, 0], F[0, 1], 0], [F[1, 0], F[1, 1], 0], [0, 0, 1]])
+
+            # Compute Right Cauchy-Green tensor
+            C = F.T @ F
+            # --------------------------------------------------------------------------------
 
             # at some point, one needs to transform to the 3D state for the material routine
             # F = np.array([[F[0], F[1], 0], [F[2], F[3], 0], [0, 0, 1]])
 
             # get material response and bring into Voigt notation for 2D case
+            # --------------------------------------------------------------------------------
             (S, DD) = material.stress_stiffness(C)
-            S_hat = ...  # TODO
-            S_tilde = ...  # TODO
-            D = ...  # TODO
+
+            # Transform 2nd Piola-Kirchhoff stress to Voigt notation for plane strain
+            # We need [S_11, S_22, S_12] for internal force calculation
+            S_hat = np.array([S[0, 0], S[1, 1], S[0, 1]])
+
+            # Construct S_tilde matrix for geometric stiffness
+            S_tilde = np.array(
+                [
+                    [S[0, 0], S[0, 1], 0, 0],
+                    [S[1, 0], S[1, 1], 0, 0],
+                    [0, 0, S[0, 0], S[0, 1]],
+                    [0, 0, S[1, 0], S[1, 1]],
+                ]
+            )
+
+            # Transform material tangent to Voigt notation for 2D plane strain
+            D = np.array(
+                [
+                    [DD[0, 0, 0, 0], DD[0, 0, 1, 1], DD[0, 0, 0, 1]],
+                    [DD[1, 1, 0, 0], DD[1, 1, 1, 1], DD[1, 1, 0, 1]],
+                    [DD[0, 1, 0, 0], DD[0, 1, 1, 1], DD[0, 1, 0, 1]],
+                ]
+            )
+
+            # Compute tangent stiffness matrix:
+            K_material = B.T @ D @ B  # constitutive component
+            K_geometric = B_tilde.T @ S_tilde @ B_tilde  # initial stress component
+
+            # compute Green-Lagrange strain tensor store values for later
+            E = 0.5 * (C - np.eye(3, 3))
 
             # compute internal force vector contribution and numerically integrate
-            Fint_elem = ...  # TODO
+            Fint_elem_gp = B.T @ S_hat
+            Fint_elem += Fint_elem_gp * gauss_point.w * self.T * detJ
 
             # compute constitutive and initial stress component of stiffness matrix and numerically integrate
-            Ktan_elem = ...  # TODO
+            Ktan_elem_gp = K_material + K_geometric
+            Ktan_elem += Ktan_elem_gp * gauss_point.w * self.T * detJ
+
+            # --------------------------------------------------------------------------------
 
             # postprocessing: strain energy density
             Ψ = 1 / 2 * np.einsum("kl,lk", S, E)
