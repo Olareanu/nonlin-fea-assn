@@ -1,0 +1,22 @@
+name: nlfea_code
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - ipywidgets=8.1.5
+  - ipykernel=6.29.5
+  - jupyterlab_widgets=3.0.13
+  - matplotlib=3.10.0
+  - meshio=5.3.5
+  - numpy=2.2.2
+  - pip=25.0
+  - python=3.13.2
+  - qt6-main=6.8.2
+  - pyvista=0.44.2
+  - scipy=1.15.1
+  - trame=3.8.0
+  - trame-client=3.6.0
+  - trame-server=3.3.0
+  - trame-vtk=2.8.15
+  - trame-vuetify=2.8.1
+  - vtk=9.3.1
