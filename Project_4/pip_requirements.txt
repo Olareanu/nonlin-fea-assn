@@ -1,0 +1,17 @@
+ipywidgets==8.1.5
+ipykernel==6.29.5
+jupyterlab_widgets==3.0.13
+matplotlib>=3.9.0
+meshio==5.3.5
+numpy>=2.0.2
+PyQt5==5.15.11
+PyQt5-Qt5==5.15.16
+PyQt5_sip==12.17.0
+pyvista==0.44.2
+scipy>=1.13.0
+trame==3.8.0
+trame-client==3.6.0
+trame-server==3.3.0
+trame-vtk==2.8.15
+trame-vuetify==2.8.1
+vtk==9.3.1
