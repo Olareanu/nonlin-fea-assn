@@ -59,8 +59,67 @@ class Hooke_J2plasticity:
         )
         α = history_old[4]
 
-        ...  # TODO
+        # ------------------------------------------------------------------------------
+        # as per the lecture notes, Table 8.7
 
+        # get projection tensors (like hooke.py)
+        I = np.eye(3, 3)
+        II = np.einsum("ij,kl->ijkl", I, I)
+        II_sym = (
+            1.0
+            / 2.0
+            * (np.einsum("ik,jl->ijkl", I, I) + np.einsum("il,jk->ijkl", I, I))
+        )
+        II_sph = 1.0 / 3.0 * np.einsum("ij,kl->ijkl", I, I)
+        II_dev = II_sym - II_sph
+
+        # compute elasticity tensor
+        CC = 2 * self.μ * II_dev + 3 * self.κ * II_sph
+
+        # compute trial quantities
+        sigma_tr_new = np.einsum("ijkl,kl->ij", CC, ε - ε_pl)
+
+        sigma_tr_dev_new = sigma_tr_new - np.trace(sigma_tr_new) * I / 3
+        norm_sigma_tr_dev_new = np.linalg.norm(sigma_tr_dev_new)
+        f_tr_new = np.sqrt(3 / 2) * norm_sigma_tr_dev_new - (self.σ_0 + self.K * α)
+
+        if f_tr_new <= 0:
+            # elastic step
+            σ = sigma_tr_new
+            DD = CC
+
+        else:
+            # plastic step
+            n = sigma_tr_dev_new / norm_sigma_tr_dev_new
+
+            # plastic quantities
+            delta_gamma = f_tr_new / (3 * self.μ + self.K)
+            ε_pl = ε_pl + np.sqrt(3 / 2) * delta_gamma * n
+            α = α + delta_gamma
+
+            # compute new stress tensor
+            sigma_dev_new = sigma_tr_dev_new * (
+                1 - np.sqrt(3 / 2) * 2 * self.μ * delta_gamma / norm_sigma_tr_dev_new
+            )
+            sigma_sph_new = self.κ * np.trace(ε) * I
+            σ = sigma_dev_new + sigma_sph_new
+
+            # compute algorithmic tangent modulus
+            DD = (
+                CC
+                - 2
+                * self.μ
+                / (1 + self.K / (3 * self.μ))
+                * np.einsum("ij,kl->ijkl", n, n)
+                - delta_gamma
+                * np.sqrt(3 / 2)
+                * 4
+                * self.μ**2
+                / norm_sigma_tr_dev_new
+                * (II_dev - np.einsum("ij,kl->ijkl", n, n))
+            )
+
+        # ------------------------------------------------------------------------------
         # store new history variables
         history_new_gp = np.array([ε_pl[0, 0], ε_pl[1, 1], ε_pl[0, 1], ε_pl[2, 2], α])
 
